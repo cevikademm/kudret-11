@@ -251,7 +251,7 @@ const App: React.FC = () => {
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      if (session?.user) setIsKitchenAuth(true);
+      if (!session?.user) setIsKitchenAuth(false);
     });
 
     fetchData();
@@ -261,7 +261,7 @@ const App: React.FC = () => {
       authListener.subscription.unsubscribe();
       clearInterval(syncInterval);
     };
-  }, [isMasterUser]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleStartSession = async (table: string, name: string, selectedLang: Language) => {
     setTableNumber(table);
@@ -535,7 +535,7 @@ const App: React.FC = () => {
             )}
             {view === 'CUSTOMER' && (
               <motion.div key="customer" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                <CustomerUI tableNumber={tableNumber} customerName={customerName} orders={orders.filter(o => o.tableNumber === tableNumber)} cart={cart} setCart={setCart} onPlaceOrder={handlePlaceOrder} onCallWaiter={handleWaiterCall} onBack={() => setView('WELCOME')} lang={lang} products={dynamicProducts} heroSlides={heroSlides} />
+                <CustomerUI tableNumber={tableNumber} customerName={customerName} orders={orders.filter(o => o.tableNumber === tableNumber)} cart={cart} setCart={setCart} onPlaceOrder={handlePlaceOrder} onCallWaiter={handleWaiterCall} onBack={() => setView('WELCOME')} lang={lang} products={dynamicProducts} heroSlides={heroSlides} categories={categories} />
               </motion.div>
             )}
             {view === 'KITCHEN' && (
