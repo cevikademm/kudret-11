@@ -50,7 +50,7 @@ const WelcomeScreen: React.FC<Props> = ({ onStart, onStaffAccess, occupiedTables
             </div>
           </div>
           <div className="space-y-1">
-            <h1 className="text-5xl font-display font-bold text-white tracking-tight">Damla</h1>
+            <h1 className="text-5xl font-display font-bold text-white tracking-tight">Kudret</h1>
             <p className="text-emerald-500 text-[10px] font-black uppercase tracking-[0.5em] opacity-80">SMART SYSTEMS</p>
           </div>
         </div>

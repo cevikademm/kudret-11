@@ -318,7 +318,7 @@ const CustomerUI: React.FC<Props> = ({
             <svg className={`w-5 h-5 text-zinc-400 ${lang === 'AR' ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
           </motion.button>
           <div className="flex flex-col justify-center min-w-0">
-            <h2 className="text-base font-display font-bold text-white truncate leading-none mb-1">Damla</h2>
+            <h2 className="text-base font-display font-bold text-white truncate leading-none mb-1">Kudret</h2>
             <div className={`flex items-center gap-1.5 overflow-hidden ${lang === 'AR' ? 'flex-row-reverse' : ''}`}>
                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
                <span className="text-[10px] text-zinc-500 uppercase font-black tracking-widest truncate">{t.tableNo} {tableNumber}</span>

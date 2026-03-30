@@ -303,7 +303,7 @@ const KitchenUI: React.FC<Props> = ({
 
   // --- RENDER ---
 
-  if (!isAuth) {
+  if (!isAuth || !activeStaff) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-950 p-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&q=80&w=2000')] bg-cover opacity-10 blur-sm" />
@@ -381,7 +381,7 @@ const KitchenUI: React.FC<Props> = ({
         <div className="w-20 lg:w-64 bg-zinc-900 border-r border-white/5 flex flex-col">
             <div className="p-6 flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center font-bold text-sm">D</div>
-                <span className="hidden lg:block font-bold tracking-tight">Damla Panel</span>
+                <span className="hidden lg:block font-bold tracking-tight">Kudret Panel</span>
             </div>
             
             <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
