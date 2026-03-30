@@ -1,0 +1,7 @@
+{
+  "name": "Damla Smart QR Menu & KDS 1.03",
+  "description": "A professional interactive restaurant menu and real-time kitchen display system featuring premium dark mode, upsell logic, and multilingual support.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
