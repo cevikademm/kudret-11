@@ -45,12 +45,19 @@ export const TRANSLATIONS: Record<Language, any> = {
     close: "Kapat",
     categories: {
       all: "Hepsi",
-      haehnchen: "Tavuk",
-      burger: "Burger",
-      pasta: "Makarna",
-      salat: "Salata",
-      dessert: "Tatlı",
-      drinks: "İçecek"
+      kahvalti: "Kahvaltı",
+      corbalar: "Çorbalar",
+      salatalar: "Salatalar",
+      mezeler: "Mezeler",
+      vejeteryan: "Vejetaryen",
+      lahmacun: "Lahmacun",
+      pide: "Pideler",
+      doner: "Döner",
+      durumlar: "Dürümler",
+      kebaplar: "Kebaplar",
+      tava: "Tava Yemekleri",
+      tatlilar: "Tatlılar",
+      icecekler: "İçecekler"
     }
   },
   EN: {
@@ -96,12 +103,19 @@ export const TRANSLATIONS: Record<Language, any> = {
     close: "Close",
     categories: {
       all: "All",
-      haehnchen: "Chicken",
-      burger: "Burger",
-      pasta: "Pasta",
-      salat: "Salad",
-      dessert: "Dessert",
-      drinks: "Drinks"
+      kahvalti: "Breakfast",
+      corbalar: "Soups",
+      salatalar: "Salads",
+      mezeler: "Starters",
+      vejeteryan: "Vegetarian",
+      lahmacun: "Lahmacun",
+      pide: "Pide",
+      doner: "Döner",
+      durumlar: "Wraps",
+      kebaplar: "Kebabs",
+      tava: "Pan Dishes",
+      tatlilar: "Desserts",
+      icecekler: "Drinks"
     }
   },
   DE: {
@@ -147,12 +161,19 @@ export const TRANSLATIONS: Record<Language, any> = {
     close: "Schließen",
     categories: {
       all: "Alle",
-      haehnchen: "Hähnchen",
-      burger: "Burger",
-      pasta: "Pasta",
-      salat: "Salad",
-      dessert: "Nachtisch",
-      drinks: "Getränke"
+      kahvalti: "Frühstück",
+      corbalar: "Suppen",
+      salatalar: "Salate",
+      mezeler: "Vorspeisen",
+      vejeteryan: "Vegetarisch",
+      lahmacun: "Lahmacun",
+      pide: "Pide",
+      doner: "Döner",
+      durumlar: "Dürümler",
+      kebaplar: "Kebabs",
+      tava: "Pfannengerichte",
+      tatlilar: "Desserts",
+      icecekler: "Getränke"
     }
   },
   RU: {
@@ -198,12 +219,19 @@ export const TRANSLATIONS: Record<Language, any> = {
     close: "Закрыть",
     categories: {
       all: "Все",
-      haehnchen: "Курица",
-      burger: "Бургер",
-      pasta: "Паста",
-      salat: "Салат",
-      dessert: "Десерт",
-      drinks: "Напитки"
+      kahvalti: "Завтрак",
+      corbalar: "Супы",
+      salatalar: "Салаты",
+      mezeler: "Закуски",
+      vejeteryan: "Вегетарианское",
+      lahmacun: "Лахмаджун",
+      pide: "Пиде",
+      doner: "Дёнер",
+      durumlar: "Дюрюм",
+      kebaplar: "Кебабы",
+      tava: "Сковорода",
+      tatlilar: "Десерты",
+      icecekler: "Напитки"
     }
   },
   AR: {
@@ -249,12 +277,19 @@ export const TRANSLATIONS: Record<Language, any> = {
     close: "إغلاق",
     categories: {
       all: "الكل",
-      haehnchen: "دجاج",
-      burger: "برجر",
-      pasta: "باستا",
-      salat: "سلطة",
-      dessert: "حلويات",
-      drinks: "مشروبات"
+      kahvalti: "الإفطار",
+      corbalar: "الشوربات",
+      salatalar: "السلطات",
+      mezeler: "المقبلات",
+      vejeteryan: "نباتي",
+      lahmacun: "لحم عجين",
+      pide: "بيده",
+      doner: "دونر",
+      durumlar: "دوروم",
+      kebaplar: "كباب",
+      tava: "أطباق المقلاة",
+      tatlilar: "الحلويات",
+      icecekler: "المشروبات"
     }
   },
   IT: {
@@ -300,12 +335,19 @@ export const TRANSLATIONS: Record<Language, any> = {
     close: "Chiudi",
     categories: {
       all: "Tutti",
-      haehnchen: "Pollo",
-      burger: "Burger",
-      pasta: "Pasta",
-      salat: "Insalata",
-      dessert: "Dolci",
-      drinks: "Bevande"
+      kahvalti: "Colazione",
+      corbalar: "Zuppe",
+      salatalar: "Insalate",
+      mezeler: "Antipasti",
+      vejeteryan: "Vegetariano",
+      lahmacun: "Lahmacun",
+      pide: "Pide",
+      doner: "Döner",
+      durumlar: "Wrap",
+      kebaplar: "Kebab",
+      tava: "Piatti in Padella",
+      tatlilar: "Dessert",
+      icecekler: "Bevande"
     }
   },
   FR: {
@@ -351,24 +393,38 @@ export const TRANSLATIONS: Record<Language, any> = {
     close: "Fermer",
     categories: {
       all: "Tous",
-      haehnchen: "Poulet",
-      burger: "Burger",
-      pasta: "Pâtes",
-      salat: "Salade",
-      dessert: "Dessert",
-      drinks: "Boissons"
+      kahvalti: "Petit-déjeuner",
+      corbalar: "Soupes",
+      salatalar: "Salades",
+      mezeler: "Entrées",
+      vejeteryan: "Végétarien",
+      lahmacun: "Lahmacun",
+      pide: "Pide",
+      doner: "Döner",
+      durumlar: "Wraps",
+      kebaplar: "Kebabs",
+      tava: "Plats à la Poêle",
+      tatlilar: "Desserts",
+      icecekler: "Boissons"
     }
   }
 };
 
 export const CATEGORIES = [
   { id: 'all', icon: '🍽️' },
-  { id: 'haehnchen', icon: '🍗' },
-  { id: 'burger', icon: '🍔' },
-  { id: 'pasta', icon: '🍝' },
-  { id: 'salat', icon: '🥗' },
-  { id: 'dessert', icon: '🍰' },
-  { id: 'drinks', icon: '🥤' },
+  { id: 'kahvalti', icon: '☕' },
+  { id: 'corbalar', icon: '🍲' },
+  { id: 'salatalar', icon: '🥗' },
+  { id: 'mezeler', icon: '🫙' },
+  { id: 'vejeteryan', icon: '🥦' },
+  { id: 'lahmacun', icon: '🫓' },
+  { id: 'pide', icon: '🍕' },
+  { id: 'doner', icon: '🥙' },
+  { id: 'durumlar', icon: '🌯' },
+  { id: 'kebaplar', icon: '🍖' },
+  { id: 'tava', icon: '🍳' },
+  { id: 'tatlilar', icon: '🍰' },
+  { id: 'icecekler', icon: '🥤' },
 ];
 
 export const PRODUCTS: Product[] = [

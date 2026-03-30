@@ -8,13 +8,20 @@ CREATE TABLE IF NOT EXISTS categories (
 
 -- Insert default categories if not exists
 INSERT INTO categories (id, icon) VALUES
-('all', '🍽️'),
-('haehnchen', '🍗'),
-('burger', '🍔'),
-('pasta', '🍝'),
-('salat', '🥗'),
-('dessert', '🍰'),
-('drinks', '🥤')
+('all',        '🍽️'),
+('kahvalti',   '☕'),
+('corbalar',   '🍲'),
+('salatalar',  '🥗'),
+('mezeler',    '🫙'),
+('vejeteryan', '🥦'),
+('lahmacun',   '🫓'),
+('pide',       '🍕'),
+('doner',      '🥙'),
+('durumlar',   '🌯'),
+('kebaplar',   '🍖'),
+('tava',       '🍳'),
+('tatlilar',   '🍰'),
+('icecekler',  '🥤')
 ON CONFLICT (id) DO NOTHING;
 
 -- Create products table
