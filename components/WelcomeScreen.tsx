@@ -96,7 +96,12 @@ const WelcomeScreen: React.FC<Props> = ({ onStart, onStaffAccess, occupiedTables
                 {tables.map((num) => {
                   const isOccupied = occupiedTables.includes(num);
                   return (
-                    <button key={num} onClick={() => { setTable(num); setIsPickerOpen(false); }} className={`h-20 rounded-2xl border transition-all flex flex-col items-center justify-center relative overflow-hidden ${table === num ? 'bg-emerald-600 border-emerald-400 text-white' : isOccupied ? 'bg-amber-600/20 border-amber-500/50 text-amber-500' : 'bg-zinc-900 border-white/5 text-zinc-400'}`}>
+                    <button key={num} onClick={() => {
+                        if (isOccupied && table !== num) {
+                          if (!window.confirm(`Masa ${num} şu anda dolu!\nYine de bu masaya geçmek istiyor musunuz?`)) return;
+                        }
+                        setTable(num); setIsPickerOpen(false);
+                      }} className={`h-20 rounded-2xl border transition-all flex flex-col items-center justify-center relative overflow-hidden ${table === num ? 'bg-emerald-600 border-emerald-400 text-white' : isOccupied ? 'bg-amber-600/20 border-amber-500/50 text-amber-500' : 'bg-zinc-900 border-white/5 text-zinc-400'}`}>
                       {isOccupied && table !== num && <div className="absolute top-0 left-0 bg-amber-500 text-[6px] font-black px-1.5 py-0.5 rounded-br-lg text-black uppercase tracking-tighter">DOLU</div>}
                       <span className="text-[10px] font-black opacity-50">{t.tableNo}</span>
                       <span className="text-xl font-black">{num}</span>

@@ -270,6 +270,14 @@ const App: React.FC = () => {
     setView('CUSTOMER');
   };
 
+  const handleTakeOrderForTable = (tableNum: string, staffName: string) => {
+    setTableNumber(tableNum);
+    setCustomerName(staffName);
+    setLang('TR');
+    setCart([]);
+    setView('CUSTOMER');
+  };
+
   const handlePlaceOrder = async (items: CartItem[], totalPrice: number, note?: string) => {
     const newOrderPayload = {
       table_number: tableNumber,
@@ -309,6 +317,10 @@ const App: React.FC = () => {
 
     if (!error && data) {
        await fetchData();
+    }
+
+    if (isKitchenAuth) {
+      setView('KITCHEN');
     }
   };
 
@@ -566,6 +578,7 @@ const App: React.FC = () => {
                   isAuth={isKitchenAuth} 
                   setAuth={setIsKitchenAuth}
                   onCloseTable={closeTable}
+                  onTakeOrder={handleTakeOrderForTable}
                   categories={categories}
                   onAddCategory={handleAddCategory}
                   onDeleteCategory={handleDeleteCategory}

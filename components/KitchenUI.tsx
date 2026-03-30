@@ -32,6 +32,7 @@ interface Props {
   subscription: SubscriptionInfo;
   currentUser?: any;
   onCloseTable: (tableNum: string) => void;
+  onTakeOrder: (tableNum: string, staffName: string) => void;
   categories: Category[];
   onAddCategory: (c: Category) => void;
   onDeleteCategory: (id: string) => void;
@@ -51,7 +52,7 @@ const KitchenUI: React.FC<Props> = ({
   isAuth, setAuth, products, onUpdateProduct, onAddProduct, onDeleteProduct,
   onAddStaff, onUpdateStaff, onDeleteStaff, staff, onBack, lang,
   heroSlides, onUpdateHeroSlides, welcomeSettings, onUpdateWelcomeSettings,
-  onShowPricing, subscription, currentUser, onCloseTable,
+  onShowPricing, subscription, currentUser, onCloseTable, onTakeOrder,
   categories, onAddCategory, onDeleteCategory, logAction
 }) => {
   // --- STATE ---
@@ -546,20 +547,40 @@ const KitchenUI: React.FC<Props> = ({
                 {/* --- TABLES TAB --- */}
                 {activeTab === 'TABLES' && (
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                        {tablesWithStatus.map(({table, status, total}) => (
-                            <div key={table} className={`relative h-48 rounded-2xl border flex flex-col items-center justify-center p-4 transition-all ${
+                        {Array.from({ length: 15 }, (_, i) => (i + 1).toString()).map((tableNum) => {
+                            const tableData = tablesWithStatus.find(t => t.table === tableNum);
+                            const status = tableData?.status || 'IDLE';
+                            const total = tableData?.total || 0;
+                            const table = tableNum;
+                            return (
+                            <div key={table} className={`relative h-52 rounded-2xl border flex flex-col items-center justify-center p-4 transition-all ${
                                 status === 'IDLE' ? 'bg-zinc-900 border-white/5 text-zinc-500' :
                                 status === 'RECEIVED' ? 'bg-blue-900/20 border-blue-500/50 text-blue-500' :
                                 status === 'PREPARING' ? 'bg-orange-900/20 border-orange-500/50 text-orange-500' :
                                 status === 'SERVED' ? 'bg-emerald-900/20 border-emerald-500/50 text-emerald-500' :
                                 'bg-purple-900/20 border-purple-500/50 text-purple-500'
                             }`}>
+                                {status !== 'IDLE' && (
+                                    <div className="absolute top-2 left-2 px-2 py-0.5 bg-amber-500 text-black text-[9px] font-black uppercase rounded-md tracking-wider">DOLU</div>
+                                )}
                                 <span className="text-3xl font-black mb-1">{table}</span>
                                 <span className="text-[10px] font-bold uppercase tracking-widest mb-2">
                                     {status === 'IDLE' ? 'BOŞ' : status === 'COMPLETED' ? 'ÖDEME YAPILDI' : status}
                                 </span>
                                 {total > 0 && <span className="text-lg font-bold text-white">{total.toFixed(2)}€</span>}
                                 
+                                {(isWaiter || isAdmin) && (
+                                    <button
+                                        onClick={() => {
+                                            if (status !== 'IDLE' && !window.confirm(`Masa ${table} zaten dolu! Yine de bu masaya sipariş eklemek istiyor musunuz?`)) return;
+                                            onTakeOrder(table, activeStaff?.name || 'Personel');
+                                        }}
+                                        className="mt-2 w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1 transition-all"
+                                    >
+                                        <span className="material-icons-round text-sm">add_circle</span>
+                                        Sipariş Al
+                                    </button>
+                                )}
                                 {status !== 'IDLE' && (
                                     <>
                                         <button onClick={() => onCloseTable(table)} className="absolute top-2 right-2 w-8 h-8 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all" title="Zorla Kapat">
@@ -567,7 +588,7 @@ const KitchenUI: React.FC<Props> = ({
                                         </button>
 
                                         {(isWaiter || isAdmin) && (
-                                            <button 
+                                            <button
                                                 onClick={() => {
                                                      if(window.confirm(`Masa ${table} işlemini sonlandırıp kasayı kapatmak istiyor musunuz?`)) {
                                                         onCloseTable(table);
@@ -582,7 +603,8 @@ const KitchenUI: React.FC<Props> = ({
                                     </>
                                 )}
                             </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
 
