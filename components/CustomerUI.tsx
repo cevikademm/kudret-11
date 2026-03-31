@@ -406,22 +406,24 @@ const CustomerUI: React.FC<Props> = ({
       </div>
 
       {/* ACTIVE ORDERS FOR THIS TABLE */}
-      {orders.filter(o => o.status !== OrderStatus.CLOSED && o.status !== OrderStatus.COMPLETED).length > 0 && (
+      {orders.filter(o => o.status !== OrderStatus.CLOSED).length > 0 && (
         <div className="px-4 mb-6">
           <div className="flex items-center gap-2 mb-3">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{t.tableNo} {tableNumber} — Aktif Sipariş</span>
           </div>
           <div className="space-y-2">
-            {orders.filter(o => o.status !== OrderStatus.CLOSED && o.status !== OrderStatus.COMPLETED).map(order => {
+            {orders.filter(o => o.status !== OrderStatus.CLOSED).map(order => {
               const statusColor =
-                order.status === OrderStatus.RECEIVED ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' :
-                order.status === OrderStatus.PREPARING ? 'bg-orange-500/10 border-orange-500/30 text-orange-400' :
-                'bg-emerald-500/10 border-emerald-500/30 text-emerald-400';
+                order.status === OrderStatus.RECEIVED   ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' :
+                order.status === OrderStatus.PREPARING  ? 'bg-orange-500/10 border-orange-500/30 text-orange-400' :
+                order.status === OrderStatus.SERVED     ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400' :
+                /* COMPLETED */                           'bg-emerald-500/10 border-emerald-500/30 text-emerald-400';
               const statusLabel =
-                order.status === OrderStatus.RECEIVED ? 'Sipariş Alındı' :
-                order.status === OrderStatus.PREPARING ? 'Hazırlanıyor 👨‍🍳' :
-                'Servis Edildi ✅';
+                order.status === OrderStatus.RECEIVED   ? 'Sipariş Alındı ⏳' :
+                order.status === OrderStatus.PREPARING  ? 'Hazırlanıyor 👨‍🍳' :
+                order.status === OrderStatus.SERVED     ? 'Masanıza Geliyor 🚶' :
+                /* COMPLETED */                           'Servis Edildi ✅';
               return (
                 <div key={order.id} className={`rounded-2xl border p-3 ${statusColor}`}>
                   <div className="flex items-center justify-between mb-2">
