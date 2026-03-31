@@ -29,7 +29,7 @@ const WelcomeScreen: React.FC<Props> = ({ onStart, onStaffAccess, occupiedTables
 
   const languages: Language[] = ['TR', 'EN', 'DE', 'RU', 'AR', 'IT', 'FR'];
   const languageFlags: Record<Language, string> = {
-    TR: '🇹🇷', EN: '🇬🇧', DE: '🇩🇪', RU: '🇷🇺', AR: '🇸🇦', IT: '🇮🇹', FR: '🇫🇷'
+    TR: 'tr', EN: 'gb', DE: 'de', RU: 'ru', AR: 'sa', IT: 'it', FR: 'fr'
   };
   const tables = Array.from({ length: 15 }, (_, i) => (i + 1).toString());
 
@@ -62,7 +62,9 @@ const WelcomeScreen: React.FC<Props> = ({ onStart, onStaffAccess, occupiedTables
           <div className="space-y-5">
             <div className="flex flex-wrap justify-center gap-1.5 mb-2">
               {languages.map((l) => (
-                <button key={l} type="button" onClick={() => setSelectedLang(l)} className={`w-11 h-11 rounded-xl text-xl flex items-center justify-center transition-all border ${selectedLang === l ? 'bg-emerald-600/30 border-emerald-400 scale-110 shadow-lg shadow-emerald-500/20' : 'bg-zinc-900 border-white/5 hover:border-white/20'}`}>{languageFlags[l]}</button>
+                <button key={l} type="button" onClick={() => setSelectedLang(l)} className={`w-11 h-11 rounded-xl overflow-hidden transition-all border flex items-center justify-center ${selectedLang === l ? 'border-emerald-400 scale-110 shadow-lg shadow-emerald-500/20 ring-2 ring-emerald-500/40' : 'border-white/10 hover:border-white/30'}`} style={selectedLang === l ? {transform:'scale(1.12)'} : {}}>
+                  <img src={`https://flagcdn.com/w40/${languageFlags[l]}.png`} alt={l} className="w-full h-full object-cover" />
+                </button>
               ))}
             </div>
             <div className="space-y-3">
