@@ -60,9 +60,10 @@ const WelcomeScreen: React.FC<Props> = ({ onStart, onStaffAccess, occupiedTables
 
         <form onSubmit={handleSubmit} className="space-y-4 bg-white/[0.03] border border-white/10 backdrop-blur-3xl p-8 rounded-[40px] shadow-2xl">
           <div className="space-y-5">
-            <div className="flex flex-wrap justify-center gap-1.5 mb-2">
+            <div className="grid grid-cols-7 gap-1.5">
               {languages.map((l) => (
-                <button key={l} type="button" onClick={() => setSelectedLang(l)} className={`w-11 h-11 rounded-xl overflow-hidden transition-all border flex items-center justify-center ${selectedLang === l ? 'border-emerald-400 scale-110 shadow-lg shadow-emerald-500/20 ring-2 ring-emerald-500/40' : 'border-white/10 hover:border-white/30'}`} style={selectedLang === l ? {transform:'scale(1.12)'} : {}}>
+                <button key={l} type="button" onClick={() => setSelectedLang(l)}
+                  className={`rounded-lg overflow-hidden transition-all border aspect-[4/3] ${selectedLang === l ? 'border-emerald-400 ring-1 ring-emerald-500/50' : 'border-white/10 opacity-60 hover:opacity-100'}`}>
                   <img src={`https://flagcdn.com/w40/${languageFlags[l]}.png`} alt={l} className="w-full h-full object-cover" />
                 </button>
               ))}
