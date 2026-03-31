@@ -100,3 +100,32 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS completed_by TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS stock_deducted BOOLEAN DEFAULT FALSE;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS feedback TEXT DEFAULT '';
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_language TEXT DEFAULT 'TR';
+
+-- Create site_settings table (key-value store for app config)
+CREATE TABLE IF NOT EXISTS site_settings (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL DEFAULT '{}',
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================================
+-- ROW LEVEL SECURITY — Tüm tablolarda anonim erişime izin ver
+-- (Supabase'de RLS aktifse bu politikalar gereklidir)
+-- ============================================================
+
+ALTER TABLE orders DISABLE ROW LEVEL SECURITY;
+ALTER TABLE products DISABLE ROW LEVEL SECURITY;
+ALTER TABLE categories DISABLE ROW LEVEL SECURITY;
+ALTER TABLE waiter_calls DISABLE ROW LEVEL SECURITY;
+ALTER TABLE staff DISABLE ROW LEVEL SECURITY;
+ALTER TABLE site_settings DISABLE ROW LEVEL SECURITY;
+ALTER TABLE logs DISABLE ROW LEVEL SECURITY;
+
+-- Eğer RLS'yi kapatmak yerine politika eklemek isterseniz:
+-- CREATE POLICY "allow_all" ON orders FOR ALL USING (true) WITH CHECK (true);
+-- CREATE POLICY "allow_all" ON products FOR ALL USING (true) WITH CHECK (true);
+-- CREATE POLICY "allow_all" ON categories FOR ALL USING (true) WITH CHECK (true);
+-- CREATE POLICY "allow_all" ON waiter_calls FOR ALL USING (true) WITH CHECK (true);
+-- CREATE POLICY "allow_all" ON staff FOR ALL USING (true) WITH CHECK (true);
+-- CREATE POLICY "allow_all" ON site_settings FOR ALL USING (true) WITH CHECK (true);
+-- CREATE POLICY "allow_all" ON logs FOR ALL USING (true) WITH CHECK (true);
