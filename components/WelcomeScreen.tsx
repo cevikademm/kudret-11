@@ -28,6 +28,9 @@ const WelcomeScreen: React.FC<Props> = ({ onStart, onStaffAccess, occupiedTables
   };
 
   const languages: Language[] = ['TR', 'EN', 'DE', 'RU', 'AR', 'IT', 'FR'];
+  const languageFlags: Record<Language, string> = {
+    TR: '🇹🇷', EN: '🇬🇧', DE: '🇩🇪', RU: '🇷🇺', AR: '🇸🇦', IT: '🇮🇹', FR: '🇫🇷'
+  };
   const tables = Array.from({ length: 15 }, (_, i) => (i + 1).toString());
 
   return (
@@ -59,7 +62,7 @@ const WelcomeScreen: React.FC<Props> = ({ onStart, onStaffAccess, occupiedTables
           <div className="space-y-5">
             <div className="flex flex-wrap justify-center gap-1.5 mb-2">
               {languages.map((l) => (
-                <button key={l} type="button" onClick={() => setSelectedLang(l)} className={`px-2.5 py-1.5 rounded-lg text-[9px] font-black transition-all border ${selectedLang === l ? 'bg-emerald-600 border-emerald-400 text-white' : 'bg-zinc-900 border-white/5 text-zinc-500'}`}>{l}</button>
+                <button key={l} type="button" onClick={() => setSelectedLang(l)} className={`w-11 h-11 rounded-xl text-xl flex items-center justify-center transition-all border ${selectedLang === l ? 'bg-emerald-600/30 border-emerald-400 scale-110 shadow-lg shadow-emerald-500/20' : 'bg-zinc-900 border-white/5 hover:border-white/20'}`}>{languageFlags[l]}</button>
               ))}
             </div>
             <div className="space-y-3">
