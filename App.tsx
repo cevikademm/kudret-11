@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { OrderStatus, Product, CartItem, Order, WaiterCall, Language, SubscriptionInfo, Staff, HeroSlide, Category, Log } from './types';
+import { OrderStatus, Product, CartItem, Order, WaiterCall, Language, SubscriptionInfo, Staff, HeroSlide, Category, Log, LoyaltyCustomer, Reservation, OrderHistoryEntry } from './types';
 import { TRANSLATIONS, PRODUCTS, CATEGORIES as DEFAULT_CATEGORIES } from './constants';
 import CustomerUI from './components/CustomerUI';
 import KitchenUI from './components/KitchenUI';
@@ -18,6 +18,8 @@ const App: React.FC = () => {
   
   const [tableNumber, setTableNumber] = useState<string>('');
   const [customerName, setCustomerName] = useState<string>('');
+  const [customerPhone, setCustomerPhone] = useState<string>('');
+  const [currentLoyaltyCustomer, setCurrentLoyaltyCustomer] = useState<LoyaltyCustomer | null>(null);
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [waiterCalls, setWaiterCalls] = useState<WaiterCall[]>([]);
@@ -25,7 +27,13 @@ const App: React.FC = () => {
   const [dynamicProducts, setDynamicProducts] = useState<Product[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
-  
+  const [loyaltyCustomers, setLoyaltyCustomers] = useState<LoyaltyCustomer[]>([]);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [googleReviewUrl, setGoogleReviewUrl] = useState('https://search.google.com/local/writereview?placeid=YOUR_PLACE_ID');
+  const [stripePaymentUrl, setStripePaymentUrl] = useState('');
+  const [locations, setLocations] = useState<{id: string, name: string, address: string}[]>([]);
+  const [currentLocationId, setCurrentLocationId] = useState<string>('');
+
   const deletedCallIds = useRef<Set<string>>(new Set());
 
   const [subscription, setSubscription] = useState<SubscriptionInfo>({
@@ -119,6 +127,32 @@ const App: React.FC = () => {
     stockDeducted: o.stock_deducted || false
   });
 
+  // Akıllı Upsell: Sipariş geçmişinden en çok birlikte sipariş edilen ürünleri hesapla
+  const smartUpsellMap = useMemo(() => {
+    const coOccurrence: Record<string, Record<string, number>> = {};
+    const completedOrders = orders.filter(o => o.status === OrderStatus.COMPLETED || o.status === OrderStatus.CLOSED);
+    completedOrders.forEach(order => {
+      const ids = order.items.map(i => i.id);
+      ids.forEach(idA => {
+        ids.forEach(idB => {
+          if (idA !== idB) {
+            if (!coOccurrence[idA]) coOccurrence[idA] = {};
+            coOccurrence[idA][idB] = (coOccurrence[idA][idB] || 0) + 1;
+          }
+        });
+      });
+    });
+    // For each product, return top 3 most co-ordered products
+    const result: Record<string, string[]> = {};
+    Object.keys(coOccurrence).forEach(idA => {
+      result[idA] = Object.entries(coOccurrence[idA])
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([id]) => id);
+    });
+    return result;
+  }, [orders]);
+
   // GÜNCELLEME: Masa ancak 'CLOSED' durumuna gelince boşalır.
   // COMPLETED (Tamamlandı/Ödendi) olsa bile masa hala dolu gözükür.
   const occupiedTables = useMemo(() => {
@@ -207,6 +241,19 @@ const App: React.FC = () => {
       const { data: staffData } = await supabase.from('staff').select('*').order('name');
       if (staffData) setStaff(staffData); 
 
+      // Locations (multi-branch support)
+      const { data: locData } = await supabase.from('locations').select('*').order('name');
+      if (locData && locData.length > 0) {
+        setLocations(locData);
+        if (!currentLocationId) setCurrentLocationId(locData[0].id);
+      }
+
+      const { data: loyaltyData } = await supabase.from('loyalty_customers').select('*').order('total_points', { ascending: false });
+      if (loyaltyData) setLoyaltyCustomers(loyaltyData);
+
+      const { data: reservationData } = await supabase.from('reservations').select('*').order('date_time', { ascending: true });
+      if (reservationData) setReservations(reservationData);
+
       const { data: settings } = await supabase.from('site_settings').select('*');
       if (settings && settings.length > 0) {
         const hero = settings.find(s => s.key === 'hero_recommendation');
@@ -226,6 +273,12 @@ const App: React.FC = () => {
 
         const welcome = settings.find(s => s.key === 'welcome_settings');
         if (welcome) setWelcomeSettings(welcome.value);
+
+        const reviewSetting = settings.find(s => s.key === 'google_review_url');
+        if (reviewSetting) setGoogleReviewUrl(reviewSetting.value);
+
+        const stripeSetting = settings.find(s => s.key === 'stripe_payment_url');
+        if (stripeSetting) setStripePaymentUrl(stripeSetting.value);
 
         let sub = settings.find(s => s.key === 'subscription_info');
         if (sub && sub.value) {
@@ -263,10 +316,22 @@ const App: React.FC = () => {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleStartSession = async (table: string, name: string, selectedLang: Language) => {
+  const handleStartSession = async (table: string, name: string, selectedLang: Language, phone?: string) => {
     setTableNumber(table);
     setCustomerName(name);
+    setCustomerPhone(phone || '');
     setLang(selectedLang);
+    setCurrentLoyaltyCustomer(null);
+
+    if (phone && phone.trim()) {
+      const { data } = await supabase
+        .from('loyalty_customers')
+        .select('*')
+        .eq('phone', phone.trim())
+        .single();
+      if (data) setCurrentLoyaltyCustomer(data);
+    }
+
     setView('CUSTOMER');
   };
 
@@ -322,6 +387,58 @@ const App: React.FC = () => {
     if (isKitchenAuth) {
       setView('KITCHEN');
     }
+  };
+
+  // Loyalty: Award points when order completes
+  const awardLoyaltyPoints = async (phone: string, name: string, points: number, order?: Order) => {
+    if (!phone) return;
+    const historyEntry: OrderHistoryEntry | undefined = order ? {
+      order_id: order.id,
+      date: new Date().toISOString(),
+      total: order.totalPrice,
+      items: order.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price }))
+    } : undefined;
+
+    const { data: existing } = await supabase.from('loyalty_customers').select('*').eq('phone', phone).single();
+    if (existing) {
+      const updatedHistory = historyEntry
+        ? [...(existing.order_history || []), historyEntry]
+        : (existing.order_history || []);
+      const updated = {
+        total_points: existing.total_points + points,
+        total_orders: existing.total_orders + 1,
+        last_visit: new Date().toISOString(),
+        order_history: updatedHistory
+      };
+      await supabase.from('loyalty_customers').update(updated).eq('phone', phone);
+      setCurrentLoyaltyCustomer({ ...existing, ...updated });
+    } else {
+      const newCustomer = {
+        phone, name, total_points: points, total_orders: 1,
+        last_visit: new Date().toISOString(),
+        order_history: historyEntry ? [historyEntry] : []
+      };
+      await supabase.from('loyalty_customers').insert([newCustomer]);
+      setCurrentLoyaltyCustomer({ id: '', ...newCustomer });
+    }
+    fetchData();
+  };
+
+  // Reservation handlers
+  const handleAddReservation = async (reservation: Omit<Reservation, 'id' | 'created_at'>) => {
+    const { data, error } = await supabase.from('reservations').insert([{ ...reservation, created_at: new Date().toISOString() }]).select();
+    if (!error) fetchData();
+    return !error;
+  };
+
+  const handleUpdateReservation = async (id: string, updates: Partial<Reservation>) => {
+    await supabase.from('reservations').update(updates).eq('id', id);
+    fetchData();
+  };
+
+  const handleDeleteReservation = async (id: string) => {
+    await supabase.from('reservations').delete().eq('id', id);
+    fetchData();
   };
 
   const handleAddCategory = async (cat: Category) => {
@@ -383,6 +500,11 @@ const App: React.FC = () => {
     }
     if (status === OrderStatus.COMPLETED && completedBy) {
         updatePayload.completed_by = completedBy;
+        // Award loyalty points (1 point per €1 spent)
+        if (currentOrder && customerPhone) {
+          const points = Math.floor(currentOrder.totalPrice);
+          awardLoyaltyPoints(customerPhone, currentOrder.customerName, points, currentOrder);
+        }
     }
     
     // LOG ACTION
@@ -542,12 +664,12 @@ const App: React.FC = () => {
           <>
             {view === 'WELCOME' && (
               <motion.div key="welcome" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <WelcomeScreen onStart={handleStartSession} onStaffAccess={() => setView('KITCHEN')} occupiedTables={occupiedTables} welcomeSettings={welcomeSettings} />
+                <WelcomeScreen onStart={handleStartSession} onStaffAccess={() => setView('KITCHEN')} occupiedTables={occupiedTables} welcomeSettings={welcomeSettings} locations={locations} currentLocationId={currentLocationId} onSelectLocation={setCurrentLocationId} />
               </motion.div>
             )}
             {view === 'CUSTOMER' && (
               <motion.div key="customer" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                <CustomerUI tableNumber={tableNumber} customerName={customerName} orders={orders.filter(o => o.tableNumber === tableNumber)} cart={cart} setCart={setCart} onPlaceOrder={handlePlaceOrder} onCallWaiter={handleWaiterCall} onBack={() => setView('WELCOME')} lang={lang} products={dynamicProducts} heroSlides={heroSlides} categories={categories} />
+                <CustomerUI tableNumber={tableNumber} customerName={customerName} orders={orders.filter(o => o.tableNumber === tableNumber)} cart={cart} setCart={setCart} onPlaceOrder={handlePlaceOrder} onCallWaiter={handleWaiterCall} onBack={() => setView('WELCOME')} lang={lang} products={dynamicProducts} heroSlides={heroSlides} categories={categories} smartUpsellMap={smartUpsellMap} googleReviewUrl={googleReviewUrl} stripePaymentUrl={stripePaymentUrl} loyaltyCustomer={currentLoyaltyCustomer} />
               </motion.div>
             )}
             {view === 'KITCHEN' && (
@@ -583,6 +705,16 @@ const App: React.FC = () => {
                   onAddCategory={handleAddCategory}
                   onDeleteCategory={handleDeleteCategory}
                   logAction={logAction}
+                  loyaltyCustomers={loyaltyCustomers}
+                  reservations={reservations}
+                  onAddReservation={handleAddReservation}
+                  onUpdateReservation={handleUpdateReservation}
+                  onDeleteReservation={handleDeleteReservation}
+                  googleReviewUrl={googleReviewUrl}
+                  onUpdateGoogleReviewUrl={async (url) => {
+                    await supabase.from('site_settings').upsert({ key: 'google_review_url', value: url }, { onConflict: 'key' });
+                    setGoogleReviewUrl(url);
+                  }}
                 />
               </motion.div>
             )}

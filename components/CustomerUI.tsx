@@ -1,7 +1,7 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Product, CartItem, Order, OrderStatus, Language, HeroSlide, Category } from '../types';
+import { Product, CartItem, Order, OrderStatus, Language, HeroSlide, Category, LoyaltyCustomer } from '../types';
 import { TRANSLATIONS } from '../constants';
 import ProductCard from './ProductCard';
 import UpsellModal from './UpsellModal';
@@ -20,6 +20,10 @@ interface Props {
   products: Product[];
   heroSlides: HeroSlide[];
   categories: Category[];
+  smartUpsellMap?: Record<string, string[]>;
+  googleReviewUrl?: string;
+  stripePaymentUrl?: string;
+  loyaltyCustomer?: LoyaltyCustomer | null;
 }
 
 interface Notification {
@@ -65,11 +69,11 @@ const swipePower = (offset: number, velocity: number) => {
   return Math.abs(offset) * velocity;
 };
 
-const CustomerUI: React.FC<Props> = ({ 
-  tableNumber, 
-  customerName, 
-  orders, 
-  cart, 
+const CustomerUI: React.FC<Props> = ({
+  tableNumber,
+  customerName,
+  orders,
+  cart,
   setCart,
   onPlaceOrder,
   onCallWaiter,
@@ -77,7 +81,11 @@ const CustomerUI: React.FC<Props> = ({
   lang,
   products,
   heroSlides,
-  categories
+  categories,
+  smartUpsellMap = {},
+  googleReviewUrl = 'https://search.google.com/local/writereview?placeid=YOUR_PLACE_ID',
+  stripePaymentUrl = '',
+  loyaltyCustomer = null
 }) => {
   const [activeCategory, setActiveCategory] = useState('all');
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -91,10 +99,55 @@ const CustomerUI: React.FC<Props> = ({
   const [translatedSlides, setTranslatedSlides] = useState<HeroSlide[]>([]);
   const [isTranslating, setIsTranslating] = useState(false);
 
+  // Tekrar Sipariş
+  const [lastOrder, setLastOrder] = useState<CartItem[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+
+  // Google Yorum
+  const [showReviewPrompt, setShowReviewPrompt] = useState(false);
+  const reviewShownRef = useRef(false);
+
+  // Push Notification
+  const prevOrderStatusRef = useRef<Record<string, string>>({});
+
   // Carousel State with Direction
   const [[page, direction], setPage] = useState([0, 0]);
 
   const t = TRANSLATIONS[lang];
+
+  // Load last order from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('kudret_last_order');
+      if (saved) setLastOrder(JSON.parse(saved));
+    } catch (e) {}
+  }, []);
+
+  // Google review prompt — show when order is COMPLETED
+  useEffect(() => {
+    if (reviewShownRef.current) return;
+    const hasCompleted = orders.some(o => o.status === OrderStatus.COMPLETED || o.status === OrderStatus.CLOSED);
+    if (hasCompleted) {
+      reviewShownRef.current = true;
+      setTimeout(() => setShowReviewPrompt(true), 3000);
+    }
+  }, [orders]);
+
+  // Push Notification — when order becomes SERVED
+  useEffect(() => {
+    orders.forEach(order => {
+      const prevStatus = prevOrderStatusRef.current[order.id];
+      if (prevStatus && prevStatus !== order.status && order.status === OrderStatus.SERVED) {
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('🍽️ Kudret Kebab', {
+            body: `Siparişiniz masanıza geliyor! (Masa ${tableNumber})`,
+            icon: '/favicon.ico'
+          });
+        }
+      }
+      prevOrderStatusRef.current[order.id] = order.status;
+    });
+  }, [orders, tableNumber]);
 
   // AI Translation Logic (Products + Hero Slides)
   useEffect(() => {
@@ -229,7 +282,14 @@ const CustomerUI: React.FC<Props> = ({
       }
       return [...prev, { ...product, quantity: 1 }];
     });
-    if (product.upsellItems && product.upsellItems.length > 0) setUpsellProduct(product);
+    // Smart upsell: use history-based suggestions first, fallback to static
+    const smartSuggestions = smartUpsellMap[product.id] || [];
+    const hasSmart = smartSuggestions.length > 0;
+    if (hasSmart || (product.upsellItems && product.upsellItems.length > 0)) {
+      // Create a virtual product with smart upsell items merged in
+      const mergedUpsell = hasSmart ? smartSuggestions : product.upsellItems;
+      setUpsellProduct({ ...product, upsellItems: mergedUpsell });
+    }
   };
 
   const removeFromCart = (productId: string) => {
@@ -243,6 +303,13 @@ const CustomerUI: React.FC<Props> = ({
   };
 
   const handleCheckout = () => {
+    // Save for "Tekrar Sipariş"
+    try { localStorage.setItem('kudret_last_order', JSON.stringify(cart)); } catch (e) {}
+    setLastOrder(cart);
+    // Request push notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
     onPlaceOrder(cart, cartTotal, orderNote);
     setIsCartOpen(false);
     setOrderNote('');
@@ -327,6 +394,12 @@ const CustomerUI: React.FC<Props> = ({
         </div>
 
         <div className={`flex items-center gap-2 ${lang === 'AR' ? 'flex-row-reverse' : ''}`}>
+           {loyaltyCustomer && (
+             <button onClick={() => setShowHistory(true)} className="relative flex items-center gap-1.5 px-3 h-9 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+               <span className="material-icons-round text-emerald-400 text-base">stars</span>
+               <span className="text-emerald-400 font-black text-[10px]">{loyaltyCustomer.total_points} PT</span>
+             </button>
+           )}
            <button className="w-9 h-9 flex items-center justify-center text-zinc-400">
              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
            </button>
@@ -525,7 +598,23 @@ const CustomerUI: React.FC<Props> = ({
               <div className="flex-1 overflow-y-auto px-6 py-2">
                 {orderStep === 'REVIEW' ? (
                   <div className="space-y-3">
-                    {cart.length === 0 ? <div className="text-center py-16 opacity-30 flex flex-col items-center"><span className="material-icons-round text-6xl mb-4">shopping_basket</span><p className="font-black text-[10px] uppercase tracking-widest">{t.emptyCart}</p></div> : 
+                    {cart.length === 0 ? (
+                      <div className="flex flex-col items-center gap-4 py-8">
+                        <div className="opacity-30 flex flex-col items-center">
+                          <span className="material-icons-round text-6xl mb-2">shopping_basket</span>
+                          <p className="font-black text-[10px] uppercase tracking-widest">{t.emptyCart}</p>
+                        </div>
+                        {lastOrder.length > 0 && (
+                          <button
+                            onClick={() => { setCart(lastOrder.map(i => ({...i}))); addNotification('Son sipariş sepete eklendi!', 'SUCCESS'); }}
+                            className="flex items-center gap-2 bg-zinc-800 border border-emerald-500/30 hover:border-emerald-500 text-emerald-500 rounded-xl px-5 py-3 text-xs font-black uppercase tracking-widest transition-all"
+                          >
+                            <span className="material-icons-round text-base">replay</span>
+                            Son Siparişi Tekrarla
+                          </button>
+                        )}
+                      </div>
+                    ) :
                       cart.map(item => (
                         <div key={item.id} className={`flex gap-4 items-center bg-white/[0.03] p-3 rounded-2xl border border-white/5 ${lang === 'AR' ? 'flex-row-reverse text-right' : ''}`}>
                           <img src={item.image} className="w-12 h-12 rounded-xl object-cover shadow-lg flex-shrink-0" alt={item.name} />
@@ -551,12 +640,110 @@ const CustomerUI: React.FC<Props> = ({
               <div className="p-6 bg-zinc-950 border-t border-white/5 space-y-4">
                 <div className={`flex justify-between items-center px-2 ${lang === 'AR' ? 'flex-row-reverse' : ''}`}><span className="text-zinc-600 text-[9px] font-black uppercase tracking-[0.3em]">{t.total.toUpperCase()}</span><span className="text-2xl font-display font-bold text-emerald-500">{cartTotal.toFixed(2)}€</span></div>
                 {orderStep === 'REVIEW' ? (
-                  <button disabled={cart.length === 0} onClick={() => setOrderStep('NOTE')} className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-900 text-white font-black text-xs uppercase tracking-widest py-4 rounded-xl shadow-lg transition-all">{t.confirmOrder}</button>
+                  <div className="space-y-2">
+                    <button disabled={cart.length === 0} onClick={() => setOrderStep('NOTE')} className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-900 text-white font-black text-xs uppercase tracking-widest py-4 rounded-xl shadow-lg transition-all">{t.confirmOrder}</button>
+                    {stripePaymentUrl && cart.length > 0 && (
+                      <a
+                        href={`${stripePaymentUrl}?prefilled_quantity=${cartItemCount}&client_reference_id=masa-${tableNumber}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full bg-violet-600 hover:bg-violet-500 text-white font-black text-xs uppercase tracking-widest py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+                        Kartla Öde ({cartTotal.toFixed(2)}€)
+                      </a>
+                    )}
+                  </div>
                 ) : (
                   <div className={`flex gap-3 ${lang === 'AR' ? 'flex-row-reverse' : ''}`}>
                     <button onClick={() => setOrderStep('REVIEW')} className="flex-1 bg-zinc-900 text-zinc-400 font-black text-[10px] uppercase tracking-widest py-4 rounded-xl transition-all">{t.back}</button>
                     <button onClick={handleCheckout} className="flex-[2] bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest py-4 rounded-xl shadow-lg transition-all">{t.confirmOrder}</button>
                   </div>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Google Review Prompt */}
+      <AnimatePresence>
+        {showReviewPrompt && (
+          <motion.div
+            initial={{ opacity: 0, y: 60 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 60 }}
+            className="fixed bottom-32 left-4 right-4 max-w-sm mx-auto bg-zinc-900 border border-yellow-500/40 rounded-3xl p-5 z-[90] shadow-2xl"
+          >
+            <div className="flex items-start gap-4">
+              <div className="text-3xl flex-shrink-0">⭐</div>
+              <div className="flex-1">
+                <h4 className="font-bold text-white text-sm mb-1">Deneyiminizi paylaşır mısınız?</h4>
+                <p className="text-zinc-400 text-xs mb-3">Google'da yorum bırakarak bize destek olun!</p>
+                <div className="flex gap-2">
+                  <a
+                    href={googleReviewUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-yellow-500 hover:bg-yellow-400 text-black px-4 py-2 rounded-xl text-xs font-black transition-all"
+                  >
+                    Yorum Yaz ⭐
+                  </a>
+                  <button onClick={() => setShowReviewPrompt(false)} className="bg-zinc-800 hover:bg-zinc-700 text-zinc-400 px-4 py-2 rounded-xl text-xs font-bold transition-all">
+                    Daha Sonra
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* GEÇMİŞ SİPARİŞLER MODAL */}
+      <AnimatePresence>
+        {showHistory && loyaltyCustomer && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowHistory(false)} className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[70]" />
+            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="fixed bottom-0 left-0 w-full max-w-2xl mx-auto bg-zinc-950 rounded-t-[32px] z-[80] overflow-hidden flex flex-col max-h-[85vh] border-t border-white/10">
+              <div className="p-6 pb-4 flex justify-between items-center">
+                <div>
+                  <h3 className="text-xl font-display font-bold text-white">Geçmiş Siparişlerim</h3>
+                  <div className="flex items-center gap-3 mt-1">
+                    <span className="text-[10px] text-emerald-500 font-black uppercase tracking-widest">{loyaltyCustomer.name}</span>
+                    <span className="text-[10px] text-zinc-500 font-bold">{loyaltyCustomer.total_orders} sipariş</span>
+                    <span className="flex items-center gap-1 text-[10px] text-amber-400 font-black"><span className="material-icons-round text-sm">stars</span>{loyaltyCustomer.total_points} puan</span>
+                  </div>
+                </div>
+                <button onClick={() => setShowHistory(false)} className="w-10 h-10 bg-zinc-900 border border-white/10 rounded-xl flex items-center justify-center"><span className="material-icons-round text-xl text-zinc-500">close</span></button>
+              </div>
+              <div className="flex-1 overflow-y-auto px-6 pb-8 space-y-3">
+                {(!loyaltyCustomer.order_history || loyaltyCustomer.order_history.length === 0) ? (
+                  <div className="flex flex-col items-center gap-3 py-12 opacity-40">
+                    <span className="material-icons-round text-5xl">receipt_long</span>
+                    <p className="text-xs font-black uppercase tracking-widest">Henüz geçmiş sipariş yok</p>
+                  </div>
+                ) : (
+                  [...loyaltyCustomer.order_history].reverse().map((entry, idx) => (
+                    <div key={idx} className="bg-white/[0.03] border border-white/5 rounded-2xl p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
+                          {new Date(entry.date).toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                        </span>
+                        <span className="text-emerald-400 font-black text-sm">{entry.total.toFixed(2)}€</span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {entry.items.map((item, i) => (
+                          <div key={i} className="flex items-center justify-between text-xs">
+                            <span className="text-zinc-300 font-medium">{item.name}</span>
+                            <div className="flex items-center gap-3">
+                              <span className="text-zinc-500">×{item.quantity}</span>
+                              <span className="text-zinc-400 font-bold">{(item.price * item.quantity).toFixed(2)}€</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))
                 )}
               </div>
             </motion.div>

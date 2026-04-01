@@ -95,3 +95,38 @@ export interface Log {
   user_role: string;
   timestamp: Date;
 }
+
+export interface OrderHistoryEntry {
+  order_id: string;
+  date: string;
+  total: number;
+  items: { name: string; quantity: number; price: number }[];
+}
+
+export interface LoyaltyCustomer {
+  id: string;
+  phone: string;
+  name: string;
+  total_points: number;
+  total_orders: number;
+  last_visit: string;
+  order_history?: OrderHistoryEntry[];
+}
+
+export interface Reservation {
+  id: string;
+  name: string;
+  phone: string;
+  table_number?: string;
+  date_time: string;
+  party_size: number;
+  status: 'PENDING' | 'CONFIRMED' | 'SEATED' | 'CANCELLED';
+  note?: string;
+  created_at: string;
+}
+
+export interface Location {
+  id: string;
+  name: string;
+  address: string;
+}
