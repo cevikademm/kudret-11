@@ -69,6 +69,24 @@ const swipePower = (offset: number, velocity: number) => {
   return Math.abs(offset) * velocity;
 };
 
+// SADAKAT SEVİYE SİSTEMİ
+const LOYALTY_LEVELS = [
+  { min: 0,    max: 99,   level: 1, name: 'Yeni Misafir',    emoji: '🌱', color: 'from-zinc-500 to-zinc-400',     badge: 'bg-zinc-700 text-zinc-300',       ring: 'ring-zinc-500' },
+  { min: 100,  max: 299,  level: 2, name: 'Sadık Müşteri',   emoji: '⭐', color: 'from-amber-600 to-amber-400',   badge: 'bg-amber-900/50 text-amber-300',  ring: 'ring-amber-500' },
+  { min: 300,  max: 699,  level: 3, name: 'Altın Üye',       emoji: '🥇', color: 'from-yellow-500 to-yellow-300', badge: 'bg-yellow-900/50 text-yellow-300', ring: 'ring-yellow-400' },
+  { min: 700,  max: 1499, level: 4, name: 'Şef\'in Favorisi', emoji: '👑', color: 'from-violet-600 to-violet-400', badge: 'bg-violet-900/50 text-violet-300', ring: 'ring-violet-500' },
+  { min: 1500, max: Infinity, level: 5, name: 'Efsane',      emoji: '🔥', color: 'from-rose-600 to-orange-400',   badge: 'bg-rose-900/50 text-rose-300',    ring: 'ring-rose-500' },
+];
+
+const getLoyaltyLevel = (points: number) => {
+  return LOYALTY_LEVELS.find(l => points >= l.min && points <= l.max) || LOYALTY_LEVELS[0];
+};
+
+const getNextLevel = (points: number) => {
+  const current = getLoyaltyLevel(points);
+  return LOYALTY_LEVELS.find(l => l.level === current.level + 1) || null;
+};
+
 const CustomerUI: React.FC<Props> = ({
   tableNumber,
   customerName,
@@ -394,12 +412,18 @@ const CustomerUI: React.FC<Props> = ({
         </div>
 
         <div className={`flex items-center gap-2 ${lang === 'AR' ? 'flex-row-reverse' : ''}`}>
-           {loyaltyCustomer && (
-             <button onClick={() => setShowHistory(true)} className="relative flex items-center gap-1.5 px-3 h-9 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
-               <span className="material-icons-round text-emerald-400 text-base">stars</span>
-               <span className="text-emerald-400 font-black text-[10px]">{loyaltyCustomer.total_points} PT</span>
-             </button>
-           )}
+           {loyaltyCustomer && (() => {
+             const lvl = getLoyaltyLevel(loyaltyCustomer.total_points);
+             return (
+               <button onClick={() => setShowHistory(true)} className={`relative flex items-center gap-1.5 px-3 h-9 rounded-xl border ring-1 ${lvl.ring} ${lvl.badge} border-white/10`}>
+                 <span className="text-sm leading-none">{lvl.emoji}</span>
+                 <div className="flex flex-col items-start leading-none">
+                   <span className="text-[8px] font-black uppercase tracking-wider opacity-70">Lv.{lvl.level}</span>
+                   <span className="font-black text-[10px]">{loyaltyCustomer.total_points} PT</span>
+                 </div>
+               </button>
+             );
+           })()}
            <button className="w-9 h-9 flex items-center justify-center text-zinc-400">
              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
            </button>
@@ -699,56 +723,134 @@ const CustomerUI: React.FC<Props> = ({
         )}
       </AnimatePresence>
 
-      {/* GEÇMİŞ SİPARİŞLER MODAL */}
+      {/* SADAKAT & GEÇMİŞ SİPARİŞLER MODAL */}
       <AnimatePresence>
-        {showHistory && loyaltyCustomer && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowHistory(false)} className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[70]" />
-            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="fixed bottom-0 left-0 w-full max-w-2xl mx-auto bg-zinc-950 rounded-t-[32px] z-[80] overflow-hidden flex flex-col max-h-[85vh] border-t border-white/10">
-              <div className="p-6 pb-4 flex justify-between items-center">
-                <div>
-                  <h3 className="text-xl font-display font-bold text-white">Geçmiş Siparişlerim</h3>
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className="text-[10px] text-emerald-500 font-black uppercase tracking-widest">{loyaltyCustomer.name}</span>
-                    <span className="text-[10px] text-zinc-500 font-bold">{loyaltyCustomer.total_orders} sipariş</span>
-                    <span className="flex items-center gap-1 text-[10px] text-amber-400 font-black"><span className="material-icons-round text-sm">stars</span>{loyaltyCustomer.total_points} puan</span>
-                  </div>
+        {showHistory && loyaltyCustomer && (() => {
+          const lvl = getLoyaltyLevel(loyaltyCustomer.total_points);
+          const nextLvl = getNextLevel(loyaltyCustomer.total_points);
+          const progressPct = nextLvl
+            ? Math.min(100, Math.round(((loyaltyCustomer.total_points - lvl.min) / (nextLvl.min - lvl.min)) * 100))
+            : 100;
+          return (
+            <>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowHistory(false)} className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[70]" />
+              <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="fixed bottom-0 left-0 w-full max-w-2xl mx-auto bg-zinc-950 rounded-t-[32px] z-[80] overflow-hidden flex flex-col max-h-[90vh] border-t border-white/10">
+
+                {/* HEADER */}
+                <div className="flex justify-between items-center px-6 pt-6 pb-2">
+                  <h3 className="text-xl font-display font-bold text-white">Sadakat Kartım</h3>
+                  <button onClick={() => setShowHistory(false)} className="w-10 h-10 bg-zinc-900 border border-white/10 rounded-xl flex items-center justify-center"><span className="material-icons-round text-xl text-zinc-500">close</span></button>
                 </div>
-                <button onClick={() => setShowHistory(false)} className="w-10 h-10 bg-zinc-900 border border-white/10 rounded-xl flex items-center justify-center"><span className="material-icons-round text-xl text-zinc-500">close</span></button>
-              </div>
-              <div className="flex-1 overflow-y-auto px-6 pb-8 space-y-3">
-                {(!loyaltyCustomer.order_history || loyaltyCustomer.order_history.length === 0) ? (
-                  <div className="flex flex-col items-center gap-3 py-12 opacity-40">
-                    <span className="material-icons-round text-5xl">receipt_long</span>
-                    <p className="text-xs font-black uppercase tracking-widest">Henüz geçmiş sipariş yok</p>
-                  </div>
-                ) : (
-                  [...loyaltyCustomer.order_history].reverse().map((entry, idx) => (
-                    <div key={idx} className="bg-white/[0.03] border border-white/5 rounded-2xl p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
-                          {new Date(entry.date).toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' })}
-                        </span>
-                        <span className="text-emerald-400 font-black text-sm">{entry.total.toFixed(2)}€</span>
+
+                <div className="flex-1 overflow-y-auto px-6 pb-8 space-y-4 pt-3">
+
+                  {/* SEVİYE KARTI */}
+                  <div className={`relative rounded-3xl p-5 overflow-hidden bg-gradient-to-br ${lvl.color}`}>
+                    <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, white 0%, transparent 60%)' }} />
+                    <div className="relative flex items-start justify-between">
+                      <div>
+                        <div className="text-white/70 text-[9px] font-black uppercase tracking-[0.3em] mb-1">Sadakat Seviyesi</div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-4xl">{lvl.emoji}</span>
+                          <div>
+                            <div className="text-white font-black text-lg leading-tight">{lvl.name}</div>
+                            <div className="text-white/70 text-xs font-bold">Seviye {lvl.level}</div>
+                          </div>
+                        </div>
                       </div>
-                      <div className="space-y-1.5">
-                        {entry.items.map((item, i) => (
-                          <div key={i} className="flex items-center justify-between text-xs">
-                            <span className="text-zinc-300 font-medium">{item.name}</span>
-                            <div className="flex items-center gap-3">
-                              <span className="text-zinc-500">×{item.quantity}</span>
-                              <span className="text-zinc-400 font-bold">{(item.price * item.quantity).toFixed(2)}€</span>
+                      <div className="text-right">
+                        <div className="text-white/70 text-[9px] font-black uppercase tracking-widest mb-0.5">Toplam Puan</div>
+                        <div className="text-white font-black text-3xl leading-none">{loyaltyCustomer.total_points}</div>
+                        <div className="text-white/60 text-[10px] font-bold mt-0.5">{loyaltyCustomer.total_orders} ziyaret</div>
+                      </div>
+                    </div>
+
+                    {/* İLERLEME ÇUBUĞU */}
+                    <div className="mt-4">
+                      <div className="flex justify-between text-[9px] text-white/70 font-black mb-1.5">
+                        <span>{lvl.min} PT — {lvl.name}</span>
+                        {nextLvl ? <span>{nextLvl.emoji} {nextLvl.name} için {nextLvl.min - loyaltyCustomer.total_points} PT daha</span> : <span>🏆 Maksimum Seviye!</span>}
+                      </div>
+                      <div className="h-2.5 bg-black/30 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${progressPct}%` }}
+                          transition={{ duration: 1, ease: 'easeOut', delay: 0.3 }}
+                          className="h-full bg-white/80 rounded-full"
+                        />
+                      </div>
+                      <div className="text-right text-[9px] text-white/60 font-bold mt-1">{progressPct}%</div>
+                    </div>
+                  </div>
+
+                  {/* TÜM SEVİYELER */}
+                  <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-4">
+                    <div className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-3">Tüm Seviyeler</div>
+                    <div className="space-y-2">
+                      {LOYALTY_LEVELS.map(l => {
+                        const isActive = l.level === lvl.level;
+                        const isDone = l.level < lvl.level;
+                        return (
+                          <div key={l.level} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all ${isActive ? `bg-gradient-to-r ${l.color} shadow-lg` : 'bg-white/[0.02]'}`}>
+                            <span className="text-xl w-7 text-center">{l.emoji}</span>
+                            <div className="flex-1">
+                              <div className={`font-black text-xs ${isActive ? 'text-white' : isDone ? 'text-zinc-400' : 'text-zinc-600'}`}>{l.name}</div>
+                              <div className={`text-[9px] font-bold ${isActive ? 'text-white/70' : 'text-zinc-600'}`}>
+                                {l.max === Infinity ? `${l.min}+ puan` : `${l.min} – ${l.max} puan`}
+                              </div>
+                            </div>
+                            {isDone && <span className="material-icons-round text-emerald-400 text-base">check_circle</span>}
+                            {isActive && <span className="text-[9px] font-black text-white/80 uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded-full">Şu an</span>}
+                            {!isDone && !isActive && <span className="material-icons-round text-zinc-700 text-base">lock</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* GEÇMİŞ SİPARİŞLER */}
+                  <div>
+                    <div className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-3">Geçmiş Siparişlerim</div>
+                    {(!loyaltyCustomer.order_history || loyaltyCustomer.order_history.length === 0) ? (
+                      <div className="flex flex-col items-center gap-3 py-10 opacity-40">
+                        <span className="material-icons-round text-5xl">receipt_long</span>
+                        <p className="text-xs font-black uppercase tracking-widest">Henüz geçmiş sipariş yok</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {[...loyaltyCustomer.order_history].reverse().map((entry, idx) => (
+                          <div key={idx} className="bg-white/[0.03] border border-white/5 rounded-2xl p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
+                                {new Date(entry.date).toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-black text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">+{Math.floor(entry.total)} PT</span>
+                                <span className="text-emerald-400 font-black text-sm">{entry.total.toFixed(2)}€</span>
+                              </div>
+                            </div>
+                            <div className="space-y-1.5">
+                              {entry.items.map((item, i) => (
+                                <div key={i} className="flex items-center justify-between text-xs">
+                                  <span className="text-zinc-300 font-medium">{item.name}</span>
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-zinc-500">×{item.quantity}</span>
+                                    <span className="text-zinc-400 font-bold">{(item.price * item.quantity).toFixed(2)}€</span>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           </div>
                         ))}
                       </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </motion.div>
-          </>
-        )}
+                    )}
+                  </div>
+
+                </div>
+              </motion.div>
+            </>
+          );
+        })()}
       </AnimatePresence>
 
       <UpsellModal product={upsellProduct} onClose={() => setUpsellProduct(null)} onAdd={(p) => { addToCart(p); setUpsellProduct(null); }} lang={lang} />
