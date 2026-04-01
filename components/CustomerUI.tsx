@@ -75,7 +75,8 @@ const LOYALTY_LEVELS = [
   { min: 100,  max: 299,  level: 2, name: 'Sadık Müşteri',   emoji: '⭐', color: 'from-amber-600 to-amber-400',   badge: 'bg-amber-900/50 text-amber-300',  ring: 'ring-amber-500' },
   { min: 300,  max: 699,  level: 3, name: 'Altın Üye',       emoji: '🥇', color: 'from-yellow-500 to-yellow-300', badge: 'bg-yellow-900/50 text-yellow-300', ring: 'ring-yellow-400' },
   { min: 700,  max: 1499, level: 4, name: 'Şef\'in Favorisi', emoji: '👑', color: 'from-violet-600 to-violet-400', badge: 'bg-violet-900/50 text-violet-300', ring: 'ring-violet-500' },
-  { min: 1500, max: Infinity, level: 5, name: 'Efsane',      emoji: '🔥', color: 'from-rose-600 to-orange-400',   badge: 'bg-rose-900/50 text-rose-300',    ring: 'ring-rose-500' },
+  { min: 1500, max: 2999, level: 5, name: 'Efsane',        emoji: '🔥', color: 'from-rose-600 to-orange-400',   badge: 'bg-rose-900/50 text-rose-300',    ring: 'ring-rose-500' },
+  { min: 3000, max: Infinity, level: 6, name: 'VIP Üye',   emoji: '💎', color: 'from-cyan-500 to-indigo-500',    badge: 'bg-indigo-900/50 text-cyan-300',  ring: 'ring-cyan-400' },
 ];
 
 const getLoyaltyLevel = (points: number) => {
